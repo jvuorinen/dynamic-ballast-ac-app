@@ -6,7 +6,7 @@ import time
 appName = "Dynamic Ballast"
 width, height = 400, 400 # width and height of the app's window
 
-UPDATE_INTERVAL = 5.0 # Seconds
+UPDATE_INTERVAL = 1.0 # Seconds
 MAX_PENALTY_PROGRESS_DELTA = 0.5
 PENALTY_BALLAST_MAX = 500
 PENALTY_RESTRICTOR_MAX = 100
@@ -54,7 +54,7 @@ def acUpdate(deltaT):
         progresses = calculate_progresses()
         penalties = calculate_penalties(progresses)
 
-        ac.concole("")
+        ac.console("")
         ac.console("Player progresses: {}".format(progresses))
         ac.console("Player penalties: {}".format(penalties))
 
