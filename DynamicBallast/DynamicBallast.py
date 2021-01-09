@@ -72,7 +72,7 @@ def acUpdate(deltaT):
             rst = int(p*PENALTY_RESTRICTOR_MAX)
 
             car_name = names[i]
-            grid_id = NAME_TO_GRID_ID[car_name]
+            grid_id = NAME_TO_GRID_ID.get(car_name, "NA")
 
             msg_bst = "/ballast {} {}".format(grid_id, bst)
             msg_rst = "/restrictor {} {}".format(grid_id, rst)
