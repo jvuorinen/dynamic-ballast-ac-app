@@ -58,4 +58,16 @@ def acUpdate(deltaT):
         ac.console("Player progresses: {}".format(progresses))
         ac.console("Player penalties: {}".format(penalties))
 
+        for i, p in enumerate(penalties):
+            bst = int(p*PENALTY_BALLAST_MAX)
+            rst = int(p*PENALTY_RESTRICTOR_MAX)
+
+            msg_bst = "/ballast {} {}".format(i, bst)
+            msg_rst = "/restrictor {} {}".format(i, rst)
+
+            ac.console(msg_bst)
+            ac.console(msg_rst)
+            ac.sendChatMessage(msg_bst)
+            ac.sendChatMessage(msg_rst)
+            
         last_updated = time.clock()
