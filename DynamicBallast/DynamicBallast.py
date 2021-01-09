@@ -12,12 +12,11 @@ PENALTY_BALLAST_MAX = 500
 PENALTY_RESTRICTOR_MAX = 100
 
 NAME_TO_GRID_ID = {
-    'jesse': 0,
-    'niko': 1,
-    'jne': 2,
-    'ym': 3
+    'Jesse': 0,
+    'nikoj0': 1,
+    'Jonas': 2,
+    'bupu7': 3
 }
-
 
 def acMain(ac_version):
     global appWindow, last_updated
