@@ -11,6 +11,13 @@ MAX_PENALTY_PROGRESS_DELTA = 0.5
 PENALTY_BALLAST_MAX = 500
 PENALTY_RESTRICTOR_MAX = 100
 
+NAME_TO_GRID_ID = {
+    'jesse': 0,
+    'niko': 1,
+    'jne': 2,
+    'ym': 3
+}
+
 
 def acMain(ac_version):
     global appWindow, last_updated
@@ -24,15 +31,18 @@ def acMain(ac_version):
     return appName
 
 
-def calculate_progresses():
+def get_progresses_and_names():
     ncars = ac.getCarsCount()
-    d = []
+    progs = []
+    names = []
     for i in range(ncars):
-        lap = ac.getCarState(i, acsys.CS.LapCount)
-        spline = ac.getCarState(i, acsys.CS.NormalizedSplinePosition)
-        prg = lap + spline
-        d.append(prg)
-    return d
+        if ac.isConnected(i):
+            lap = ac.getCarState(i, acsys.CS.LapCount)
+            spline = ac.getCarState(i, acsys.CS.NormalizedSplinePosition)
+            prg = lap + spline
+            progs.append(prg)
+            names.append(ac.getDriverName(i))
+    return progs, names
 
 
 def calculate_penalties(progresses):
@@ -51,7 +61,7 @@ def acUpdate(deltaT):
     global last_updated
 
     if (time.clock() - last_updated) > UPDATE_INTERVAL:
-        progresses = calculate_progresses()
+        progresses, names = get_progresses_and_names()
         penalties = calculate_penalties(progresses)
 
         ac.console("")
@@ -62,8 +72,11 @@ def acUpdate(deltaT):
             bst = int(p*PENALTY_BALLAST_MAX)
             rst = int(p*PENALTY_RESTRICTOR_MAX)
 
-            msg_bst = "/ballast {} {}".format(i, bst)
-            msg_rst = "/restrictor {} {}".format(i, rst)
+            car_name = names[i]
+            grid_id = NAME_TO_GRID_ID[car_name]
+
+            msg_bst = "/ballast {} {}".format(grid_id, bst)
+            msg_rst = "/restrictor {} {}".format(grid_id, rst)
 
             ac.console(msg_bst)
             ac.console(msg_rst)
