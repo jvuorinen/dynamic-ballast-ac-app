@@ -3,15 +3,11 @@ import ac
 import acsys
 import time
 
+from settings import GRID_IDS, ADMIN_PW
+
 appName = "Dynamic Ballast"
 width, height = 400, 600 # width and height of the app's window
 
-NAME_TO_GRID_ID = {
-    'Jesse': 0,
-    'nikoj0': 1,
-    'squeakymousetoy': 2,
-    'bupu7': 3
-}
 
 def acMain(ac_version):
     global appWindow, last_calculated, last_posted
@@ -25,7 +21,7 @@ def acMain(ac_version):
 
     create_ui_components()
 
-    ac.sendChatMessage("/admin xxxxxxxx")
+    ac.sendChatMessage("/admin {}".format(ADMIN_PW))
 
     return appName
 
@@ -149,7 +145,7 @@ def acUpdate(deltaT):
             rst = int(p*PENALTY_RESTRICTOR_MAX)
 
             car_name = names[i]
-            grid_id = NAME_TO_GRID_ID.get(car_name, "NA")
+            grid_id = GRID_IDS.get(car_name, "NA")
 
             msg_queue.append("/ballast {} {}".format(grid_id, bst))
             msg_queue.append("/restrictor {} {}".format(grid_id, rst))
