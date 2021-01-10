@@ -4,17 +4,28 @@ import acsys
 import time
 
 from config import GRID_IDS, ADMIN_PW
+from itertools import cycle
 
 appName = "Dynamic Ballast"
-width, height = 400, 600 # width and height of the app's window
+WIDTH, HEIGHT = 400, 600 # width and height of the app's window
+USE_GRID_ID_CONVERSION = True # Lookup table needed in config.py if True
+
+NCARS = ac.getCarsCount()
+DRIVER_NAMES = [ac.getDriverName(i) for i in range(NCARS)]
+
+
+def msg_turn_generator(n_players):
+    for a in cycle(["ballast", "restrictor"]):
+        for b in range(n_players):
+            yield (a, b)
 
 
 def acMain(ac_version):
-    global appWindow, last_calculated, last_posted
+    global appWindow, last_calculated, last_posted, turn_gen
 
     appWindow = ac.newApp(appName)
     ac.setTitle(appWindow, appName)
-    ac.setSize(appWindow, width, height)
+    ac.setSize(appWindow, WIDTH, HEIGHT)
 
     last_calculated = time.clock()
     last_posted = time.clock()
@@ -22,6 +33,8 @@ def acMain(ac_version):
     create_ui_components()
 
     ac.sendChatMessage("/admin {}".format(ADMIN_PW))
+
+    turn_gen = msg_turn_generator(NCARS)
 
     return appName
 
@@ -54,16 +67,16 @@ def create_ui_components():
     spinner_calculation_interval = ac.addSpinner(appWindow, "Calculation interval (ms)")
     ac.setRange(spinner_calculation_interval, 500, 20000)
     ac.setStep(spinner_calculation_interval, 500)
-    ac.setValue(spinner_calculation_interval, 10000)
+    ac.setValue(spinner_calculation_interval, 2000)
 
     spinner_posting_interval = ac.addSpinner(appWindow, "Posting interval (ms)")
     ac.setRange(spinner_posting_interval, 200, 2000)
     ac.setStep(spinner_posting_interval, 100)
-    ac.setValue(spinner_posting_interval, 1000)
+    ac.setValue(spinner_posting_interval, 800)
 
 
     # Text output
-    label_names = ac.addLabel(appWindow, "Driver names:")
+    label_names = ac.addLabel(appWindow, "Driver names: {}".format(DRIVER_NAMES))
     ac.setFontSize(label_names, 10)
 
     label_track_progress = ac.addLabel(appWindow, "Track progresses:")
@@ -88,18 +101,15 @@ def create_ui_components():
     ac.setPosition(label_last_message, x_margin, y_margin + (spacing * 29))
 
 
-def get_progresses_and_names():
-    ncars = ac.getCarsCount()
+def get_progresses():
     progs = []
-    names = []
-    for i in range(ncars):
+    for i in range(NCARS):
         if ac.isConnected(i):
             lap = ac.getCarState(i, acsys.CS.LapCount)
             spline = ac.getCarState(i, acsys.CS.NormalizedSplinePosition)
             prg = lap + spline
             progs.append(prg)
-            names.append(ac.getDriverName(i))
-    return progs, names
+    return progs
 
 
 def calculate_penalties(progresses):
@@ -118,42 +128,55 @@ def calculate_penalties(progresses):
     return penalties
 
 
-def acUpdate(deltaT):
-    global last_calculated, last_posted, msg_queue
+def acUpdate(delta_t):
+    global last_calculated, last_posted
     global spinner_calculation_interval, spinner_posting_interval
     global label_names, label_track_progress, label_penalties, label_last_message
+    global turn_gen, penalties
 
     CALCULATION_INTERVAL = ac.getValue(spinner_calculation_interval)/1000
     POSTING_INTERVAL = ac.getValue(spinner_posting_interval)/1000
-    PENALTY_BALLAST_MAX = ac.getValue(spinner_ballast)
-    PENALTY_RESTRICTOR_MAX = ac.getValue(spinner_restrictor)
+
     
     if (time.clock() - last_calculated) > CALCULATION_INTERVAL:
         last_calculated = time.clock()
-        progresses, names = get_progresses_and_names()
+
+        progresses = get_progresses()
         penalties = calculate_penalties(progresses)
 
-        # ac.console("Player progresses: {}".format(progresses))
-        # ac.console("Player penalties: {}".format(penalties))
-        ac.setText(label_names, "Driver names: {}".format(names))
         ac.setText(label_track_progress, "Track progresses: {}".format([round(float(i), 2) for i in progresses]))
         ac.setText(label_penalties, "Penalty percentages: {}".format([round(float(i), 2) for i in penalties]))
 
-        msg_queue = []
-        for i, p in enumerate(penalties):
-            bst = int(p*PENALTY_BALLAST_MAX)
-            rst = int(p*PENALTY_RESTRICTOR_MAX)
-
-            car_name = names[i]
-            grid_id = GRID_IDS.get(car_name, "NA")
-
-            msg_queue.append("/ballast {} {}".format(grid_id, bst))
-            msg_queue.append("/restrictor {} {}".format(grid_id, rst))
-
 
     if (time.clock() - last_posted) > POSTING_INTERVAL:
-        last_posted = time.clock()
-        msg = msg_queue.pop()
-        ac.setText(label_last_message, "Last message posted: {}".format(msg))
-        ac.console(msg)
-        ac.sendChatMessage(msg)
+        p_type, target = next(turn_gen)
+
+        if ac.isConnected(target):
+            last_posted = time.clock()
+            msg = create_msg(p_type, target, penalties)
+
+            ac.sendChatMessage(msg)
+            ac.setText(label_last_message, "Last message posted: {}".format(msg))
+
+
+def create_msg(p_type, target, penalties):
+        global spinner_ballast
+        global spinner_restrictor
+
+        MAX_BST = ac.getValue(spinner_ballast)
+        MAX_RST = ac.getValue(spinner_restrictor)
+
+        p_pct = penalties[target]
+
+        if p_type == 'ballast':
+            value = int(p_pct*MAX_BST)
+        elif p_type == 'restrictor':
+            value = int(p_pct*MAX_RST)
+
+        if USE_GRID_ID_CONVERSION:
+            driver_name = DRIVER_NAMES[target]
+            target = GRID_IDS.get(driver_name, "NA")
+
+        msg = "/{} {} {}".format(p_type, target, value)
+
+        return msg
