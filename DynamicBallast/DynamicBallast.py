@@ -53,8 +53,8 @@ def create_ui_components():
     
     spinner_calculation_interval = ac.addSpinner(appWindow, "Calculation interval (ms)")
     ac.setRange(spinner_calculation_interval, 500, 20000)
-    ac.setStep(spinner_calculation_interval, 10000)
-    ac.setValue(spinner_calculation_interval, 5000)
+    ac.setStep(spinner_calculation_interval, 500)
+    ac.setValue(spinner_calculation_interval, 10000)
 
     spinner_posting_interval = ac.addSpinner(appWindow, "Posting interval (ms)")
     ac.setRange(spinner_posting_interval, 200, 2000)
