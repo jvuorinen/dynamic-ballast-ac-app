@@ -4,14 +4,7 @@ import acsys
 import time
 
 appName = "Dynamic Ballast"
-width, height = 400, 400 # width and height of the app's window
-
-CALCULATION_INTERVAL = 10.0 # Seconds
-POSTING_INTERVAL = 2.0 # Seconds
-
-MAX_PENALTY_PROGRESS_DELTA = 0.05
-PENALTY_BALLAST_MAX = 2000
-PENALTY_RESTRICTOR_MAX = 100
+width, height = 400, 600 # width and height of the app's window
 
 NAME_TO_GRID_ID = {
     'Jesse': 0,
@@ -64,7 +57,7 @@ def create_ui_components():
     
     spinner_calculation_interval = ac.addSpinner(appWindow, "Calculation interval (ms)")
     ac.setRange(spinner_calculation_interval, 500, 20000)
-    ac.setStep(spinner_calculation_interval, 500)
+    ac.setStep(spinner_calculation_interval, 10000)
     ac.setValue(spinner_calculation_interval, 5000)
 
     spinner_posting_interval = ac.addSpinner(appWindow, "Posting interval (ms)")
@@ -114,12 +107,16 @@ def get_progresses_and_names():
 
 
 def calculate_penalties(progresses):
+    global spinner_smoothing
+
+    SMOOTHING = ac.getValue(spinner_smoothing)/100
+
     prog_min = min(progresses)
     prog_max = max(progresses)
 
     advantages = [p - prog_min for p in progresses]
     scale = max(0.001, prog_max - prog_min)
-    dampen = min(1.0, (prog_max - prog_min) / MAX_PENALTY_PROGRESS_DELTA)
+    dampen = min(1.0, (prog_max - prog_min) / SMOOTHING)
 
     penalties = [dampen * (a/scale) for a in advantages]
     return penalties
@@ -127,14 +124,24 @@ def calculate_penalties(progresses):
 
 def acUpdate(deltaT):
     global last_calculated, last_posted, msg_queue
+    global spinner_calculation_interval, spinner_posting_interval
+    global label_names, label_track_progress, label_penalties, label_last_message
 
+    CALCULATION_INTERVAL = ac.getValue(spinner_calculation_interval)/1000
+    POSTING_INTERVAL = ac.getValue(spinner_posting_interval)/1000
+    PENALTY_BALLAST_MAX = ac.getValue(spinner_ballast)
+    PENALTY_RESTRICTOR_MAX = ac.getValue(spinner_restrictor)
+    
     if (time.clock() - last_calculated) > CALCULATION_INTERVAL:
         last_calculated = time.clock()
         progresses, names = get_progresses_and_names()
         penalties = calculate_penalties(progresses)
 
-        ac.console("Player progresses: {}".format(progresses))
-        ac.console("Player penalties: {}".format(penalties))
+        # ac.console("Player progresses: {}".format(progresses))
+        # ac.console("Player penalties: {}".format(penalties))
+        ac.setText(label_names, "Driver names: {}".format(names))
+        ac.setText(label_track_progress, "Track progresses: {}".format([round(float(i), 2) for i in progresses]))
+        ac.setText(label_penalties, "Penalty percentages: {}".format([round(float(i), 2) for i in penalties]))
 
         msg_queue = []
         for i, p in enumerate(penalties):
@@ -147,8 +154,10 @@ def acUpdate(deltaT):
             msg_queue.append("/ballast {} {}".format(grid_id, bst))
             msg_queue.append("/restrictor {} {}".format(grid_id, rst))
 
+
     if (time.clock() - last_posted) > POSTING_INTERVAL:
         last_posted = time.clock()
         msg = msg_queue.pop()
+        ac.setText(label_last_message, "Last message posted: {}".format(msg))
         ac.console(msg)
         ac.sendChatMessage(msg)
