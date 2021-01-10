@@ -1,5 +1,5 @@
-# Dynamic ballast and restrictor mod for Assetto Corsa
-When active, the mod constantly adjusts ballast and restrictor for all connected players so that the leader gets the maximum penalty and the last one gets no penalties at all.
+# Dynamic ballast and restrictor app for Assetto Corsa
+When active, the app constantly adjusts ballast and restrictor for all connected players so that the leader gets the maximum penalty and the last one gets no penalties at all.
 
 ## Installation
 1) Copy the DynamicBallast folder into AC's apps/python folder
