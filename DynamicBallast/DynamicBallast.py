@@ -3,7 +3,7 @@ import ac
 import acsys
 import time
 
-from settings import GRID_IDS, ADMIN_PW
+from config import GRID_IDS, ADMIN_PW
 
 appName = "Dynamic Ballast"
 width, height = 400, 600 # width and height of the app's window
