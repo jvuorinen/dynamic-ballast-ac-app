@@ -10,6 +10,7 @@ When active, the app constantly adjusts ballast and restrictor for all connected
 * Max ballast - Maximum ballast penalty the app can give
 * Max restrictor - Maximum restrictor penalty the app can give
 * Smoothing - How "spread out" the penalties are. If this is 0, the app starts to give maximum penalties right away, even if the lead is very small. On the other hand if this is at 20, the app gradually lesses the penalties given until the gap between the first and the last driver has reached 20% of the lap length.
+* Non-linearity - Increasing this makes things harder for the leader and easier for the others
 * Calculation interval - How often the app recalculates the results
 * Posting interval - How often the app posts chat messages that the server uses to make the adjustments. Increase this in case the app does not seem to actually do the adjustments.
 
