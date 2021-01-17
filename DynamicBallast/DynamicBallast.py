@@ -7,7 +7,7 @@ from config import GRID_IDS, ADMIN_PW
 from itertools import cycle
 
 appName = "Dynamic Ballast"
-WIDTH, HEIGHT = 400, 600 # width and height of the app's window
+WIDTH, HEIGHT = 400, 700 # width and height of the app's window
 USE_GRID_ID_CONVERSION = True # Lookup table needed in config.py if True
 
 NCARS = ac.getCarsCount()
@@ -41,7 +41,7 @@ def acMain(ac_version):
 
 def create_ui_components():
     global appWindow
-    global spinner_ballast, spinner_restrictor, spinner_smoothing, spinner_calculation_interval, spinner_posting_interval
+    global spinner_ballast, spinner_restrictor, spinner_smoothing, spinner_nonlinearity, spinner_calculation_interval, spinner_posting_interval
     global label_names, label_track_progress, label_penalties, label_last_message
 
     x_margin = 10
@@ -50,29 +50,34 @@ def create_ui_components():
 
     # Spinners
     spinner_ballast = ac.addSpinner(appWindow, "Max. ballast penalty (kg)")
-    ac.setRange(spinner_ballast, 0, 2000)
-    ac.setStep(spinner_ballast, 100)
-    ac.setValue(spinner_ballast, 1000)
+    ac.setRange(spinner_ballast, 0, 5000)
+    ac.setStep(spinner_ballast, 500)
+    ac.setValue(spinner_ballast, 1500)
 
     spinner_restrictor = ac.addSpinner(appWindow, "Max. restrictor penalty (pct.)")
     ac.setRange(spinner_restrictor, 0, 100)
-    ac.setStep(spinner_restrictor, 5)
-    ac.setValue(spinner_restrictor, 90)
+    ac.setStep(spinner_restrictor, 10)
+    ac.setValue(spinner_restrictor, 100)
 
     spinner_smoothing = ac.addSpinner(appWindow, "Smoothing (pct. of track)")
     ac.setRange(spinner_smoothing, 0, 100)
     ac.setStep(spinner_smoothing, 5)
-    ac.setValue(spinner_smoothing, 20)
+    ac.setValue(spinner_smoothing, 15)
+
+    spinner_nonlinearity = ac.addSpinner(appWindow, "Non-linearity")
+    ac.setRange(spinner_nonlinearity, 1, 5)
+    ac.setStep(spinner_nonlinearity, 1)
+    ac.setValue(spinner_nonlinearity, 3)
     
     spinner_calculation_interval = ac.addSpinner(appWindow, "Calculation interval (ms)")
-    ac.setRange(spinner_calculation_interval, 500, 10000)
+    ac.setRange(spinner_calculation_interval, 500, 5000)
     ac.setStep(spinner_calculation_interval, 500)
     ac.setValue(spinner_calculation_interval, 1000)
 
     spinner_posting_interval = ac.addSpinner(appWindow, "Posting interval (ms)")
-    ac.setRange(spinner_posting_interval, 200, 2000)
+    ac.setRange(spinner_posting_interval, 1000, 20000)
     ac.setStep(spinner_posting_interval, 100)
-    ac.setValue(spinner_posting_interval, 800)
+    ac.setValue(spinner_posting_interval, 1500)
 
 
     # Text output
@@ -93,12 +98,13 @@ def create_ui_components():
     ac.setPosition(spinner_ballast, x_margin, y_margin + (spacing * 0))
     ac.setPosition(spinner_restrictor, x_margin, y_margin + (spacing * 5))
     ac.setPosition(spinner_smoothing, x_margin, y_margin + (spacing * 10))
-    ac.setPosition(spinner_calculation_interval, x_margin, y_margin + (spacing * 15))
-    ac.setPosition(spinner_posting_interval, x_margin, y_margin + (spacing * 20))
-    ac.setPosition(label_names, x_margin, y_margin + (spacing * 25))
-    ac.setPosition(label_track_progress, x_margin, y_margin + (spacing * 26))
-    ac.setPosition(label_penalties, x_margin, y_margin + (spacing * 27))
-    ac.setPosition(label_last_message, x_margin, y_margin + (spacing * 29))
+    ac.setPosition(spinner_nonlinearity, x_margin, y_margin + (spacing * 15))
+    ac.setPosition(spinner_calculation_interval, x_margin, y_margin + (spacing * 20))
+    ac.setPosition(spinner_posting_interval, x_margin, y_margin + (spacing * 25))
+    ac.setPosition(label_names, x_margin, y_margin + (spacing * 30))
+    ac.setPosition(label_track_progress, x_margin, y_margin + (spacing * 31))
+    ac.setPosition(label_penalties, x_margin, y_margin + (spacing * 32))
+    ac.setPosition(label_last_message, x_margin, y_margin + (spacing * 33))
 
 
 def get_progresses():
@@ -113,9 +119,10 @@ def get_progresses():
 
 
 def calculate_penalties(progresses):
-    global spinner_smoothing
+    global spinner_smoothing, spinner_nonlinearity
 
     SMOOTHING = ac.getValue(spinner_smoothing)/100
+    NONLINEARITY = ac.getValue(spinner_nonlinearity)
 
     prog_min = min(progresses)
     prog_max = max(progresses)
@@ -124,8 +131,10 @@ def calculate_penalties(progresses):
     scale = max(0.001, prog_max - prog_min)
     dampen = min(1.0, (prog_max - prog_min) / SMOOTHING)
 
-    penalties = [dampen * (a/scale) for a in advantages]
-    return penalties
+    raw_penalties = [dampen * (a/scale) for a in advantages]
+    nonlinear_penalties = [p**NONLINEARITY for p in raw_penalties]
+
+    return nonlinear_penalties
 
 
 def acUpdate(delta_t):
