@@ -52,7 +52,7 @@ def create_ui_components():
     spinner_ballast = ac.addSpinner(appWindow, "Max. ballast penalty (kg)")
     ac.setRange(spinner_ballast, 0, 5000)
     ac.setStep(spinner_ballast, 500)
-    ac.setValue(spinner_ballast, 1500)
+    ac.setValue(spinner_ballast, 600)
 
     spinner_restrictor = ac.addSpinner(appWindow, "Max. restrictor penalty (pct.)")
     ac.setRange(spinner_restrictor, 0, 100)
@@ -62,7 +62,7 @@ def create_ui_components():
     spinner_smoothing = ac.addSpinner(appWindow, "Smoothing (pct. of track)")
     ac.setRange(spinner_smoothing, 0, 100)
     ac.setStep(spinner_smoothing, 5)
-    ac.setValue(spinner_smoothing, 15)
+    ac.setValue(spinner_smoothing, 10)
 
     spinner_nonlinearity = ac.addSpinner(appWindow, "Non-linearity")
     ac.setRange(spinner_nonlinearity, 1, 5)
